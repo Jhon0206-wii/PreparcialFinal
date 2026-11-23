@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import { ListPrintRequestsDto } from "./dto/list-print-requests.dto";
 import { requestValidationPipe } from "../common/request-validation.pipe";
 import { CreatePrintRequestDto } from "./dto/create-print-request.dto";
 import { PrintRequestsService } from "./print-requests.service";
@@ -10,9 +11,9 @@ export class PrintRequestsController {
   constructor(private readonly service: PrintRequestsService) {}
 
   @Get()
-  findAll() {
+  findAll(@Query(requestValidationPipe) query: ListPrintRequestsDto) {
     // TODO: recibir la consulta con @Query, aplicar el pipe y pasar status al servicio.
-    return this.service.findAll();
+    return this.service.findAll(query.status);
   }
 
   @Get(":id")
