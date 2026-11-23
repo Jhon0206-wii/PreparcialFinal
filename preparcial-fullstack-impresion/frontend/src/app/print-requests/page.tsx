@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { apiFetch } from "../../lib/api";
+import type { PrintRequest } from "../../lib/print-types";
 import { clearSessionToken } from "../../lib/session";
 
 async function logout() {
@@ -8,9 +10,15 @@ async function logout() {
   redirect("/login");
 }
 
-export default function PrintRequestsPage() {
-  // TODO B: recibir searchParams, pedir el listado con apiFetch y mostrar las solicitudes.
-  // TODO B: agregar los enlaces Todas y Pendientes debajo de la navegación de acciones.
+type PrintRequestsPageProps = { searchParams: Promise<{ status?: string }> };
+
+export default async function PrintRequestsPage({ searchParams }: PrintRequestsPageProps) {
+  const { status } = await searchParams;
+  const filter = status === "pending" ? "pending" : undefined;
+
+  const response = await apiFetch(`/print-requests${filter ? `?status=${filter}` : ""}`);
+  const requests: PrintRequest[] = response.ok ? await response.json() : [];
+
   return (
     <main>
       <h1>Solicitudes de impresión</h1>
@@ -18,8 +26,26 @@ export default function PrintRequestsPage() {
         <Link className="button" href="/print-requests/new">Nueva solicitud</Link>
         <form action={logout}><button type="submit">Cerrar sesión</button></form>
       </div>
+      <nav className="actions" aria-label="Filtros">
+        <Link href="/print-requests">Todas</Link>
+        <Link href="/print-requests?status=pending">Pendientes</Link>
+      </nav>
       <section className="panel" aria-label="Solicitudes">
-        <p>Espacio para el listado del preparcial.</p>
+        <table>
+          <thead>
+            <tr><th>Título</th><th>Páginas</th><th>Impresora</th><th>Estado</th></tr>
+          </thead>
+          <tbody>
+            {requests.map((request) => (
+              <tr key={request.id}>
+                <td><Link href={`/print-requests/${request.id}`}>{request.title}</Link></td>
+                <td>{request.pages}</td>
+                <td>{request.printer.name}</td>
+                <td>{request.status === "pending" ? "Pendiente" : "Impresa"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </section>
     </main>
   );
